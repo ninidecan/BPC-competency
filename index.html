@@ -5,25 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>แบบประเมินการฝึกอบรมการดูแลผู้ป่วยแบบประคับประคอง</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
-    * \{ font-family: 'Sarabun', sans-serif; \}
-    .likert-option \{ transition: all 0.2s ease; \}
-    .likert-option:hover \{ transform: scale(1.05); \}
-    .likert-option.selected \{ transform: scale(1.1); \}
-    .section-card \{ animation: fadeInUp 0.5s ease-out; \}
-    @keyframes fadeInUp \{
-      from \{ opacity: 0; transform: translateY(20px); \}
-      to \{ opacity: 1; transform: translateY(0); \}
-    \}
-    .progress-bar \{ transition: width 0.3s ease; \}
-    input[type="radio"]:checked + label \{ border-color: #0d9488; background-color: #f0fdfa; \}
-    .question-row:nth-child(odd) \{ background-color: #f8fafc; \}
-    .question-row:nth-child(even) \{ background-color: #ffffff; \}
+    * { font-family: 'Sarabun', sans-serif; }
+    .likert-option { transition: all 0.2s ease; }
+    .likert-option:hover { transform: scale(1.05); }
+    .likert-option.selected { transform: scale(1.1); }
+    .section-card { animation: fadeInUp 0.5s ease-out; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .progress-bar { transition: width 0.3s ease; }
+    input[type="radio"]:checked + label { border-color: #0d9488; background-color: #f0fdfa; }
+    .question-row:nth-child(odd) { background-color: #f8fafc; }
+    .question-row:nth-child(even) { background-color: #ffffff; }
   </style>
-  <style>body \{ box-sizing: border-box; \}</style>
+  <style>body { box-sizing: border-box; }</style>
  </head>
  <body class="h-full bg-gradient-to-br from-teal-50 via-white to-cyan-50">
   <div id="app-wrapper" class="h-full w-full overflow-auto">
@@ -335,47 +337,9 @@
     <span id="toast-message"></span>
    </div>
   </div>
-  
   <script>
-    /**
-     * GitHub Pages version — save to Google Sheets via Google Apps Script Web App
-     * 1) Deploy GAS as Web App (Execute as: Me, Who has access: Anyone)
-     * 2) Put the Web App URL below
-     */
-    const GOOGLE_SHEET_ID = "1RV1Y8iB-ftuKKgfhUfSO5V6UO1QpviYvFk9d0V8s19I";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxO_UmAWWUBZPL4c9HVUunHmxh9kiFOuZHbPoFjbooHCGfc3sqiEuMdiQ6OuwZBmqtl/exec";
-
-    function mapPeriodToSheetName(period) {
-      // ตามที่กำหนด
-      if (period === "ก่อนการอบรม") return "pretest";
-      if (period === "หลังการอบรม (5 วัน)") return "postest";
-      if (period === "หลังการอบรม (1 เดือน)") return "postest 2";
-      return "pretest";
-    }
-
-    async function appendToGoogleSheet(payload) {
-      if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("PUT_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-        throw new Error("ยังไม่ได้ตั้งค่า GAS_WEB_APP_URL");
-      }
-
-      const res = await fetch(GAS_WEB_APP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json().catch(() => ({}));
-      if (!data || data.ok !== true) {
-        throw new Error(data && data.error ? data.error : "บันทึกไม่สำเร็จ");
-      }
-      return data;
-    }
-  </script>
-
-<script>
     // Default configuration
-    const defaultConfig = \{
+    const defaultConfig = {
       form_title: 'แบบประเมิน โครงการฝึกอบรมการดูแลผู้ป่วยแบบประคับประคองขั้นพื้นฐาน สำหรับพยาบาลประจำหอผู้ป่วย (หลักสูตร 5 วัน)',
       organization_name: '',
       primary_color: '#0d9488',
@@ -383,13 +347,13 @@
       background_color: '#f0fdfa',
       text_color: '#1f2937',
       accent_color: '#10b981'
-    \};
+    };
 
-    let config = \{ ...defaultConfig \};
+    let config = { ...defaultConfig };
     let currentSection = 1;
     let assessmentPeriod = '';
-    let part2Scores = \{\};
-    let part3Scores = \{\};
+    let part2Scores = {};
+    let part3Scores = {};
 
     // Part 2 Questions (65 new questions)
     const part2Questions = [
@@ -477,227 +441,227 @@
       "ผู้ป่วยในหน่วยงานของท่านสามารถเข้าถึงพื้นที่กลางภายนอกได้ตามที่ต้องการ"
     ];
 
-    function selectPeriod(period) \{
+    function selectPeriod(period) {
       assessmentPeriod = period;
       document.getElementById('period-modal').classList.add('hidden');
-      document.getElementById('period-text').textContent = `ระยะเวลาประเมิน: $\{period\}`;
+      document.getElementById('period-text').textContent = `ระยะเวลาประเมิน: ${period}`;
       generatePart2Questions();
       generatePart3Questions();
-    \}
+    }
 
     // Generate Part 2 Questions
-    function generatePart2Questions() \{
+    function generatePart2Questions() {
       const container = document.getElementById('part2-questions');
       container.innerHTML = '';
       
-      part2Questions.forEach((question, index) => \{
+      part2Questions.forEach((question, index) => {
         const questionNum = index + 1;
         const row = document.createElement('div');
         row.className = 'question-row p-4 border-b border-gray-100 last:border-b-0';
         row.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
-              <span class="font-medium text-gray-800">$\{questionNum\}. </span>
-              <span class="text-gray-700">$\{question\}</span>
+              <span class="font-medium text-gray-800">${questionNum}. </span>
+              <span class="text-gray-700">${question}</span>
             </div>
             <div class="flex gap-2 justify-end flex-shrink-0">
-              $\{[0,1,2,3,4,5].map(score => `
+              ${[0,1,2,3,4,5].map(score => `
                 <label class="likert-option cursor-pointer">
-                  <input type="radio" name="p2q$\{questionNum\}" value="$\{score\}" class="sr-only" onchange="updatePart2Score($\{questionNum\}, $\{score\})">
-                  <div class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-bold text-gray-500 hover:border-teal-500 hover:text-teal-600 transition-all $\{getScoreColor(score, 6)\}">
-                    $\{score\}
+                  <input type="radio" name="p2q${questionNum}" value="${score}" class="sr-only" onchange="updatePart2Score(${questionNum}, ${score})">
+                  <div class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-bold text-gray-500 hover:border-teal-500 hover:text-teal-600 transition-all ${getScoreColor(score, 6)}">
+                    ${score}
                   </div>
                 </label>
-              `).join('')\}
+              `).join('')}
             </div>
           </div>
         `;
         container.appendChild(row);
-      \});
-    \}
+      });
+    }
 
     // Generate Part 3 Questions
-    function generatePart3Questions() \{
+    function generatePart3Questions() {
       const container = document.getElementById('part3-questions');
       container.innerHTML = '';
       
-      part3Questions.forEach((question, index) => \{
+      part3Questions.forEach((question, index) => {
         const questionNum = index + 1;
         const row = document.createElement('div');
         row.className = 'question-row p-4 border-b border-gray-100 last:border-b-0';
         row.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
-              <span class="font-medium text-gray-800">$\{questionNum\}. </span>
-              <span class="text-gray-700">$\{question\}</span>
+              <span class="font-medium text-gray-800">${questionNum}. </span>
+              <span class="text-gray-700">${question}</span>
             </div>
             <div class="flex gap-2 justify-end flex-shrink-0">
-              $\{[1,2,3,4,5].map(score => `
+              ${[1,2,3,4,5].map(score => `
                 <label class="likert-option cursor-pointer">
-                  <input type="radio" name="p3q$\{questionNum\}" value="$\{score\}" class="sr-only" onchange="updatePart3Score($\{questionNum\}, $\{score\})">
-                  <div class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-bold text-gray-500 hover:border-emerald-500 hover:text-emerald-600 transition-all $\{getScoreColor(score, 5)\}">
-                    $\{score\}
+                  <input type="radio" name="p3q${questionNum}" value="${score}" class="sr-only" onchange="updatePart3Score(${questionNum}, ${score})">
+                  <div class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-bold text-gray-500 hover:border-emerald-500 hover:text-emerald-600 transition-all ${getScoreColor(score, 5)}">
+                    ${score}
                   </div>
                 </label>
-              `).join('')\}
+              `).join('')}
             </div>
           </div>
         `;
         container.appendChild(row);
-      \});
-    \}
+      });
+    }
 
-    function getScoreColor(score, max) \{
-      if (max === 6) \{
+    function getScoreColor(score, max) {
+      if (max === 6) {
         const colors = ['bg-gray-100', 'bg-red-50', 'bg-orange-50', 'bg-yellow-50', 'bg-lime-50', 'bg-green-50'];
         return colors[score] || '';
-      \} else \{
+      } else {
         const colors = ['', 'bg-red-50', 'bg-orange-50', 'bg-yellow-50', 'bg-lime-50', 'bg-green-50'];
         return colors[score] || '';
-      \}
-    \}
+      }
+    }
 
-    function updatePart2Score(questionNum, score) \{
+    function updatePart2Score(questionNum, score) {
       part2Scores[questionNum] = score;
       
-      const inputs = document.querySelectorAll(`input[name="p2q$\{questionNum\}"]`);
-      inputs.forEach(input => \{
+      const inputs = document.querySelectorAll(`input[name="p2q${questionNum}"]`);
+      inputs.forEach(input => {
         const parent = input.parentElement;
         const div = parent.querySelector('div');
-        if (parseInt(input.value) === score) \{
+        if (parseInt(input.value) === score) {
           div.classList.add('selected', 'border-teal-500', 'bg-teal-500', 'text-white');
           div.classList.remove('border-gray-300', 'text-gray-500');
-        \} else \{
+        } else {
           div.classList.remove('selected', 'border-teal-500', 'bg-teal-500', 'text-white');
           div.classList.add('border-gray-300', 'text-gray-500');
-        \}
-      \});
+        }
+      });
 
       updatePart2Average();
-    \}
+    }
 
-    function updatePart3Score(questionNum, score) \{
+    function updatePart3Score(questionNum, score) {
       part3Scores[questionNum] = score;
       
-      const inputs = document.querySelectorAll(`input[name="p3q$\{questionNum\}"]`);
-      inputs.forEach(input => \{
+      const inputs = document.querySelectorAll(`input[name="p3q${questionNum}"]`);
+      inputs.forEach(input => {
         const parent = input.parentElement;
         const div = parent.querySelector('div');
-        if (parseInt(input.value) === score) \{
+        if (parseInt(input.value) === score) {
           div.classList.add('selected', 'border-emerald-500', 'bg-emerald-500', 'text-white');
           div.classList.remove('border-gray-300', 'text-gray-500');
-        \} else \{
+        } else {
           div.classList.remove('selected', 'border-emerald-500', 'bg-emerald-500', 'text-white');
           div.classList.add('border-gray-300', 'text-gray-500');
-        \}
-      \});
+        }
+      });
 
       updatePart3Average();
-    \}
+    }
 
-    function updatePart2Average() \{
+    function updatePart2Average() {
       const scores = Object.values(part2Scores);
       if (scores.length === 0) return;
       
       const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
       document.getElementById('part2-avg').textContent = avg.toFixed(2);
-      document.getElementById('part2-bar').style.width = `$\{(avg / 5) * 100\}%`;
-    \}
+      document.getElementById('part2-bar').style.width = `${(avg / 5) * 100}%`;
+    }
 
-    function updatePart3Average() \{
+    function updatePart3Average() {
       const scores = Object.values(part3Scores);
       if (scores.length === 0) return;
       
       const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
       document.getElementById('part3-avg').textContent = avg.toFixed(2);
-      document.getElementById('part3-bar').style.width = `$\{(avg / 5) * 100\}%`;
-    \}
+      document.getElementById('part3-bar').style.width = `${(avg / 5) * 100}%`;
+    }
 
-    function goToSection(sectionNum) \{
-      if (sectionNum > currentSection) \{
-        if (!validateSection(currentSection)) \{
+    function goToSection(sectionNum) {
+      if (sectionNum > currentSection) {
+        if (!validateSection(currentSection)) {
           return;
-        \}
-      \}
+        }
+      }
 
       document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
       
-      const targetSection = document.getElementById(`section$\{sectionNum\}`);
-      if (targetSection) \{
+      const targetSection = document.getElementById(`section${sectionNum}`);
+      if (targetSection) {
         targetSection.classList.remove('hidden');
         currentSection = sectionNum;
         
         const progress = (sectionNum / 3) * 100;
-        document.getElementById('progress-bar').style.width = `$\{progress\}%`;
-        document.getElementById('progress-text').textContent = `ส่วนที่ $\{sectionNum\} / 3`;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('progress-text').textContent = `ส่วนที่ ${sectionNum} / 3`;
         
-        window.scrollTo(\{ top: 0, behavior: 'smooth' \});
-      \}
-    \}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
 
-    function validateSection(sectionNum) \{
-      if (sectionNum === 1) \{
+    function validateSection(sectionNum) {
+      if (sectionNum === 1) {
         const requiredFields = [
-          \{ name: 'gender', label: 'เพศ' \},
-          \{ name: 'age', label: 'อายุ', type: 'input' \},
-          \{ name: 'marital', label: 'สถานภาพสมรส' \},
-          \{ name: 'education', label: 'ระดับการศึกษา' \},
-          \{ name: 'hospital', label: 'ระดับโรงพยาบาล' \},
-          \{ name: 'position', label: 'ตำแหน่งงาน' \},
-          \{ name: 'experience', label: 'ประสบการณ์', type: 'input' \},
-          \{ name: 'palliative_exp', label: 'ประสบการณ์ดูแลประคับประคอง' \},
-          \{ name: 'palliative_training', label: 'การอบรมดูแลประคับประคอง' \}
+          { name: 'gender', label: 'เพศ' },
+          { name: 'age', label: 'อายุ', type: 'input' },
+          { name: 'marital', label: 'สถานภาพสมรส' },
+          { name: 'education', label: 'ระดับการศึกษา' },
+          { name: 'hospital', label: 'ระดับโรงพยาบาล' },
+          { name: 'position', label: 'ตำแหน่งงาน' },
+          { name: 'experience', label: 'ประสบการณ์', type: 'input' },
+          { name: 'palliative_exp', label: 'ประสบการณ์ดูแลประคับประคอง' },
+          { name: 'palliative_training', label: 'การอบรมดูแลประคับประคอง' }
         ];
 
-        for (const field of requiredFields) \{
-          if (field.type === 'input') \{
-            const input = document.querySelector(`input[name="$\{field.name\}"]`);
-            if (!input || !input.value.trim()) \{
-              showToast(`กรุณากรอก$\{field.label\}`);
+        for (const field of requiredFields) {
+          if (field.type === 'input') {
+            const input = document.querySelector(`input[name="${field.name}"]`);
+            if (!input || !input.value.trim()) {
+              showToast(`กรุณากรอก${field.label}`);
               return false;
-            \}
-          \} else \{
-            const checked = document.querySelector(`input[name="$\{field.name\}"]:checked`);
-            if (!checked) \{
-              showToast(`กรุณาเลือก$\{field.label\}`);
+            }
+          } else {
+            const checked = document.querySelector(`input[name="${field.name}"]:checked`);
+            if (!checked) {
+              showToast(`กรุณาเลือก${field.label}`);
               return false;
-            \}
-          \}
-        \}
-      \} else if (sectionNum === 2) \{
+            }
+          }
+        }
+      } else if (sectionNum === 2) {
         const answeredCount = Object.keys(part2Scores).length;
-        if (answeredCount < part2Questions.length) \{
-          showToast(`กรุณาตอบคำถามส่วนที่ 2 ให้ครบทุกข้อ (ตอบแล้ว $\{answeredCount\}/$\{part2Questions.length\} ข้อ)`);
+        if (answeredCount < part2Questions.length) {
+          showToast(`กรุณาตอบคำถามส่วนที่ 2 ให้ครบทุกข้อ (ตอบแล้ว ${answeredCount}/${part2Questions.length} ข้อ)`);
           return false;
-        \}
-      \}
+        }
+      }
       return true;
-    \}
+    }
 
-    function showToast(message, isError = true) \{
+    function showToast(message, isError = true) {
       const toast = document.getElementById('toast');
       const toastMessage = document.getElementById('toast-message');
       
-      toast.className = `fixed bottom-4 right-4 $\{isError ? 'bg-red-500' : 'bg-green-500'\} text-white px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 z-50`;
+      toast.className = `fixed bottom-4 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 z-50`;
       toastMessage.textContent = message;
       toast.classList.remove('translate-y-20', 'opacity-0');
       
-      setTimeout(() => \{
+      setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
-      \}, 3000);
-    \}
+      }, 3000);
+    }
 
-    async function submitForm() \{
+    async function submitForm() {
       const answeredCount = Object.keys(part3Scores).length;
-      if (answeredCount < part3Questions.length) \{
-        showToast(`กรุณาตอบคำถามส่วนที่ 3 ให้ครบทุกข้อ (ตอบแล้ว $\{answeredCount\}/$\{part3Questions.length\} ข้อ)`);
+      if (answeredCount < part3Questions.length) {
+        showToast(`กรุณาตอบคำถามส่วนที่ 3 ให้ครบทุกข้อ (ตอบแล้ว ${answeredCount}/${part3Questions.length} ข้อ)`);
         return;
-      \}
+      }
 
       document.getElementById('loading-overlay').classList.remove('hidden');
       document.getElementById('submit-btn').disabled = true;
 
-      const formData = \{
+      const formData = {
         submission_id: 'SUB-' + Date.now(),
         submitted_at: new Date().toISOString(),
         assessment_period: assessmentPeriod,
@@ -718,181 +682,181 @@
         part2_average: Object.values(part2Scores).reduce((a, b) => a + b, 0) / Object.values(part2Scores).length,
         part3_scores: JSON.stringify(part3Scores),
         part3_average: Object.values(part3Scores).reduce((a, b) => a + b, 0) / Object.values(part3Scores).length
-      \};
+      };
 
-      try \{
-        if (window.dataSdk) \{
+      try {
+        if (window.dataSdk) {
           const result = await window.dataSdk.create(formData);
-          if (result.isOk) \{
+          if (result.isOk) {
             showSuccess(formData.part2_average, formData.part3_average);
-          \} else \{
+          } else {
             showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
-          \}
-        \} else \{
+          }
+        } else {
           showSuccess(formData.part2_average, formData.part3_average);
-        \}
-      \} catch (error) \{
+        }
+      } catch (error) {
         showToast('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      \} finally \{
+      } finally {
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('submit-btn').disabled = false;
-      \}
-    \}
+      }
+    }
 
-    function showSuccess(part2Avg, part3Avg) \{
+    function showSuccess(part2Avg, part3Avg) {
       document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
       document.getElementById('success-section').classList.remove('hidden');
       document.getElementById('final-part2').textContent = part2Avg.toFixed(2);
       document.getElementById('final-part3').textContent = part3Avg.toFixed(2);
-      document.getElementById('period-confirmation').textContent = `ระยะเวลาประเมิน: $\{assessmentPeriod\}`;
+      document.getElementById('period-confirmation').textContent = `ระยะเวลาประเมิน: ${assessmentPeriod}`;
       document.getElementById('progress-bar').style.width = '100%';
       document.getElementById('progress-text').textContent = 'เสร็จสิ้น';
-      window.scrollTo(\{ top: 0, behavior: 'smooth' \});
-    \}
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-    function resetForm() \{
+    function resetForm() {
       document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
       document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
       
-      part2Scores = \{\};
-      part3Scores = \{\};
+      part2Scores = {};
+      part3Scores = {};
       
-      document.querySelectorAll('.likert-option div').forEach(div => \{
+      document.querySelectorAll('.likert-option div').forEach(div => {
         div.classList.remove('selected', 'border-teal-500', 'bg-teal-500', 'border-emerald-500', 'bg-emerald-500', 'text-white');
         div.classList.add('border-gray-300', 'text-gray-500');
-      \});
+      });
       
       document.getElementById('part2-avg').textContent = '-';
       document.getElementById('part2-bar').style.width = '0%';
       document.getElementById('part3-avg').textContent = '-';
       document.getElementById('part3-bar').style.width = '0%';
       
-      document.querySelectorAll('input[name="marital_other"], input[name="hospital_other"], input[name="position_other"]').forEach(el => \{
+      document.querySelectorAll('input[name="marital_other"], input[name="hospital_other"], input[name="position_other"]').forEach(el => {
         el.classList.add('hidden');
-      \});
+      });
       document.getElementById('training-course-wrapper').classList.add('hidden');
       
       assessmentPeriod = '';
       document.getElementById('period-modal').classList.remove('hidden');
       goToSection(1);
-    \}
+    }
 
-    function setupConditionalFields() \{
-      document.querySelectorAll('input[name="marital"]').forEach(radio => \{
-        radio.addEventListener('change', function() \{
+    function setupConditionalFields() {
+      document.querySelectorAll('input[name="marital"]').forEach(radio => {
+        radio.addEventListener('change', function() {
           const otherField = document.querySelector('input[name="marital_other"]');
-          if (this.value === 'อื่นๆ') \{
+          if (this.value === 'อื่นๆ') {
             otherField.classList.remove('hidden');
-          \} else \{
+          } else {
             otherField.classList.add('hidden');
             otherField.value = '';
-          \}
-        \});
-      \});
+          }
+        });
+      });
 
-      document.querySelectorAll('input[name="hospital"]').forEach(radio => \{
-        radio.addEventListener('change', function() \{
+      document.querySelectorAll('input[name="hospital"]').forEach(radio => {
+        radio.addEventListener('change', function() {
           const otherField = document.querySelector('input[name="hospital_other"]');
-          if (this.value === 'อื่นๆ') \{
+          if (this.value === 'อื่นๆ') {
             otherField.classList.remove('hidden');
-          \} else \{
+          } else {
             otherField.classList.add('hidden');
             otherField.value = '';
-          \}
-        \});
-      \});
+          }
+        });
+      });
 
-      document.querySelectorAll('input[name="position"]').forEach(radio => \{
-        radio.addEventListener('change', function() \{
+      document.querySelectorAll('input[name="position"]').forEach(radio => {
+        radio.addEventListener('change', function() {
           const otherField = document.querySelector('input[name="position_other"]');
-          if (this.value === 'อื่นๆ') \{
+          if (this.value === 'อื่นๆ') {
             otherField.classList.remove('hidden');
-          \} else \{
+          } else {
             otherField.classList.add('hidden');
             otherField.value = '';
-          \}
-        \});
-      \});
+          }
+        });
+      });
 
-      document.querySelectorAll('input[name="palliative_training"]').forEach(radio => \{
-        radio.addEventListener('change', function() \{
+      document.querySelectorAll('input[name="palliative_training"]').forEach(radio => {
+        radio.addEventListener('change', function() {
           const courseWrapper = document.getElementById('training-course-wrapper');
-          if (this.value === 'เคย') \{
+          if (this.value === 'เคย') {
             courseWrapper.classList.remove('hidden');
-          \} else \{
+          } else {
             courseWrapper.classList.add('hidden');
             document.querySelector('input[name="training_course"]').value = '';
-          \}
-        \});
-      \});
-    \}
+          }
+        });
+      });
+    }
 
-    async function onConfigChange(newConfig) \{
-      config = \{ ...defaultConfig, ...newConfig \};
+    async function onConfigChange(newConfig) {
+      config = { ...defaultConfig, ...newConfig };
       
       const titleEl = document.getElementById('main-title');
       if (titleEl) titleEl.textContent = config.form_title || defaultConfig.form_title;
       
       const orgEl = document.getElementById('org-name');
       if (orgEl) orgEl.textContent = config.organization_name || '';
-    \}
+    }
 
-    function mapToCapabilities(config) \{
-      return \{
+    function mapToCapabilities(config) {
+      return {
         recolorables: [
-          \{
+          {
             get: () => config.primary_color || defaultConfig.primary_color,
-            set: (value) => \{ config.primary_color = value; if (window.elementSdk) window.elementSdk.setConfig(\{ primary_color: value \}); \}
-          \},
-          \{
+            set: (value) => { config.primary_color = value; if (window.elementSdk) window.elementSdk.setConfig({ primary_color: value }); }
+          },
+          {
             get: () => config.background_color || defaultConfig.background_color,
-            set: (value) => \{ config.background_color = value; if (window.elementSdk) window.elementSdk.setConfig(\{ background_color: value \}); \}
-          \},
-          \{
+            set: (value) => { config.background_color = value; if (window.elementSdk) window.elementSdk.setConfig({ background_color: value }); }
+          },
+          {
             get: () => config.text_color || defaultConfig.text_color,
-            set: (value) => \{ config.text_color = value; if (window.elementSdk) window.elementSdk.setConfig(\{ text_color: value \}); \}
-          \}
+            set: (value) => { config.text_color = value; if (window.elementSdk) window.elementSdk.setConfig({ text_color: value }); }
+          }
         ],
         borderables: [],
         fontEditable: undefined,
         fontSizeable: undefined
-      \};
-    \}
+      };
+    }
 
-    function mapToEditPanelValues(config) \{
+    function mapToEditPanelValues(config) {
       return new Map([
         ['form_title', config.form_title || defaultConfig.form_title],
         ['organization_name', config.organization_name || defaultConfig.organization_name]
       ]);
-    \}
+    }
 
-    async function init() \{
+    async function init() {
       setupConditionalFields();
       
-      if (window.elementSdk) \{
-        window.elementSdk.init(\{
+      if (window.elementSdk) {
+        window.elementSdk.init({
           defaultConfig,
           onConfigChange,
           mapToCapabilities,
           mapToEditPanelValues
-        \});
-      \}
+        });
+      }
 
-      if (window.dataSdk) \{
-        const dataHandler = \{
-          onDataChanged(data) \{
+      if (window.dataSdk) {
+        const dataHandler = {
+          onDataChanged(data) {
             console.log('Total submissions:', data.length);
-          \}
-        \};
+          }
+        };
         
         const result = await window.dataSdk.init(dataHandler);
-        if (!result.isOk) \{
+        if (!result.isOk) {
           console.error('Failed to initialize data SDK');
-        \}
-      \}
-    \}
+        }
+      }
+    }
 
     init();
   </script>
- <script>(function()\{function c()\{var b=a.contentDocument||a.contentWindow.document;if(b)\{var d=b.createElement('script');d.innerHTML="window.__CF$cv$params=\{r:'9cebd621f4daa459',t:'MTc3MTIzMjIzNi4wMDAwMDA='\};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)\}\}if(document.body)\{var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else\{var e=document.onreadystatechange||function()\{\};document.onreadystatechange=function(b)\{e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())\}\}\}\})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cebd621f4daa459',t:'MTc3MTIzMjIzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
