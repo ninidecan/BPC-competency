@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แบบประเมินโครงการฝึกอบรมการดูแลผู้ป่วยแบบประคับประคอง (Pre/Post)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Sarabun', sans-serif; }
+    .likert-option { transition: all 0.15s ease; }
+    .likert-option:hover { transform: scale(1.03); }
+    .likert-option.selected { transform: scale(1.06); }
+    .section-card { animation: fadeInUp 0.35s ease-out; }
+    @keyframes fadeInUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+    .period-badge { display:inline-block; padding:6px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+    .period-completed { background:#dcfce7; color:#166534; }
+    .period-pending { background:#fef3c7; color:#92400e; }
+    .period-locked { background:#e5e7eb; color:#6b7280; }
+    .period-link.disabled { pointer-events:none; opacity:0.7; }
+  </style>
+</head>
+
+<body class="h-full bg-gradient-to-br from-teal-50 via-white to-cyan-50">
+  <div id="app-wrapper" class="h-full w-full overflow-auto">
+    <header class="bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-6 px-4 shadow-lg sticky top-0 z-30">
+      <div class="max-w-5xl mx-auto text-center">
+        <div class="flex flex-col items-center justify-center gap-2 mb-1">
+          <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+          </svg>
+          <h1 class="text-lg md:text-xl font-bold leading-tight">
+            แบบประเมิน โครงการฝึกอบรมการดูแลผู้ป่วยแบบประคับประคองขั้นพื้นฐาน (หลักสูตร 5 วัน)
+          </h1>
+          <p class="text-teal-100 text-sm">Pre-test • Post-test 1 (5 วัน) • Post-test 2 (1 เดือน)</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- License Modal -->
+    <div id="license-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">เริ่มทำแบบประเมิน</h2>
+        <p class="text-gray-600 mb-6 text-center">กรุณากรอกเลขใบประกอบวิชาชีพ (10 หลัก)</p>
+
+        <input type="text" id="license-input" placeholder="เช่น 1234567890" maxlength="10"
+          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition-all text-center text-lg tracking-widest mb-4"
+          onkeypress="if(event.key==='Enter') verifyLicense()" />
+
+        <div id="license-error" class="text-red-500 text-sm mb-4 hidden text-center"></div>
+
+        <div id="license-loading" class="hidden text-center mb-4">
+          <div class="inline-block animate-spin">
+            <svg class="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          </div>
+          <p class="text-gray-600 mt-2">กำลังตรวจสอบข้อมูล...</p>
+        </div>
+
+        <button onclick="verifyLicense()" id="verify-btn"
+          class="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg">
+          ตรวจสอบ
+        </button>
+
+        <p class="text-xs text-gray-500 mt-4 text-center">
+          ระบบจะตรวจสอบว่าท่านทำ Pre / Post 1 / Post 2 แล้วหรือยัง (อ้างอิงจากเลขใบประกอบวิชาชีพ)
+        </p>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sticky top-20 z-40 bg-white shadow-sm">
+      <div class="max-w-5xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <span>ความคืบหน้า</span>
+          <span id="progress-text">ตรวจสอบสถานะ</span>
+        </div>
+        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto px-4 py-6 pb-20">
+
+      <!-- STATUS -->
+      <section id="status-section" class="section-card bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800">สถานะการประเมิน</h2>
+            <div class="text-sm text-gray-500">เลขใบประกอบวิชาชีพ: <span id="license-badge" class="font-mono font-semibold"></span></div>
+          </div>
+        </div>
+
+        <div class="space-y-3 mb-8">
+          <div id="card-pre" class="period-link p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-teal-300 transition-all"
+               onclick="startFromStatus('PRE')">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-gray-700">ก่อนการอบรม (Pre-test)</span>
+              <span id="status-pre" class="period-badge period-pending">ยังไม่ได้ทำ</span>
+            </div>
+          </div>
+
+          <div id="card-post1" class="period-link p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-teal-300 transition-all"
+               onclick="startFromStatus('POST1')">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-gray-700">หลังการอบรม (5 วัน) (Post-test 1)</span>
+              <span id="status-post1" class="period-badge period-pending">ยังไม่ได้ทำ</span>
+            </div>
+            <p id="msg-post1" class="text-xs text-gray-500 mt-2 hidden">⚠️ ต้องทำ Pre-test ก่อน</p>
+          </div>
+
+          <div id="card-post2" class="period-link p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-teal-300 transition-all"
+               onclick="startFromStatus('POST2')">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-gray-700">หลังการอบรม (1 เดือน) (Post-test 2)</span>
+              <span id="status-post2" class="period-badge period-pending">ยังไม่ได้ทำ</span>
+            </div>
+            <p id="msg-post2" class="text-xs text-gray-500 mt-2 hidden">⚠️ ต้องทำ Post-test 1 ก่อน</p>
+          </div>
+        </div>
+
+        <!-- RESULTS (when all completed) -->
+        <div id="results-section" class="hidden border-t-2 border-gray-200 pt-8">
+          <h3 class="text-xl font-bold text-gray-800 mb-6">สรุปผลการประเมินเปรียบเทียบ</h3>
+          <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 mb-6">
+            <canvas id="comparisonChart"></canvas>
+          </div>
+          <p class="text-sm text-gray-600">แสดงคะแนนเฉลี่ยของส่วนที่ 2 และส่วนที่ 3 เปรียบเทียบทั้ง 3 ช่วงเวลา</p>
+        </div>
+      </section>
+
+      <!-- SECTION 1 -->
+      <section id="section1" class="section-card bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+            <span class="text-teal-600 font-bold">1</span>
+          </div>
+          <h2 class="text-xl md:text-2xl font-bold text-gray-800">ส่วนที่ 1: แบบบันทึกข้อมูลส่วนบุคคล</h2>
+        </div>
+
+        <div class="space-y-6">
+          <div>
+            <label class="block text-gray-700 font-medium mb-3">เลขใบประกอบวิชาชีพ <span class="text-red-500">*</span></label>
+            <div class="px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-xl text-gray-700 font-mono text-lg" id="license-display"></div>
+            <p id="profile-note" class="text-xs text-gray-500 mt-2 hidden">ท่านเคยกรอกส่วนที่ 1 แล้ว ระบบจะแสดงเฉพาะเลขใบประกอบวิชาชีพ</p>
+          </div>
+
+          <div id="profile-fields">
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">1. เพศ <span class="text-red-500">*</span></label>
+              <div class="flex flex-wrap gap-4">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="gender" value="ชาย" class="w-5 h-5 text-teal-600"> <span class="text-gray-700">ชาย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="gender" value="หญิง" class="w-5 h-5 text-teal-600"> <span class="text-gray-700">หญิง</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">2. อายุของท่าน (ปี) <span class="text-red-500">*</span></label>
+              <input type="number" name="age" min="20" max="70" placeholder="เช่น 35"
+                class="w-full md:w-48 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">3. สถานภาพสมรสของท่าน <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="โสด" class="w-5 h-5 text-teal-600"> <span>โสด</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="สมรส" class="w-5 h-5 text-teal-600"> <span>สมรส</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="หย่าร้าง" class="w-5 h-5 text-teal-600"> <span>หย่าร้าง</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="หม้าย" class="w-5 h-5 text-teal-600"> <span>หม้าย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="แยกกันอยู่" class="w-5 h-5 text-teal-600"> <span>แยกกันอยู่</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="marital" value="อื่นๆ" class="w-5 h-5 text-teal-600"> <span>อื่น ๆ</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">4. ระดับการศึกษาสูงสุด <span class="text-red-500">*</span></label>
+              <div class="flex flex-wrap gap-3">
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="education" value="ปริญญาตรี" class="w-5 h-5 text-teal-600"> <span>ปริญญาตรี</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="education" value="ปริญญาโท" class="w-5 h-5 text-teal-600"> <span>ปริญญาโท</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="education" value="ปริญญาเอก" class="w-5 h-5 text-teal-600"> <span>ปริญญาเอก</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">5. ระดับโรงพยาบาลที่ปฏิบัติการ <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="hospital" value="โรงพยาบาลชุมชน" class="w-5 h-5 text-teal-600"> <span>โรงพยาบาลชุมชน</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="hospital" value="โรงพยาบาลทั่วไป" class="w-5 h-5 text-teal-600"> <span>โรงพยาบาลทั่วไป</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="hospital" value="โรงพยาบาลศูนย์" class="w-5 h-5 text-teal-600"> <span>โรงพยาบาลศูนย์</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="hospital" value="อื่นๆ" class="w-5 h-5 text-teal-600"> <span>อื่น ๆ</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">6. ตำแหน่งงาน <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="position" value="หัวหน้ากลุ่มงาน" class="w-5 h-5 text-teal-600"> <span>หัวหน้ากลุ่มงาน</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="position" value="หัวหน้าหอผู้ป่วย" class="w-5 h-5 text-teal-600"> <span>หัวหน้าหอผู้ป่วย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="position" value="รองหัวหน้าหอผู้ป่วย" class="w-5 h-5 text-teal-600"> <span>รองหัวหน้าหอผู้ป่วย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300"><input type="radio" name="position" value="พยาบาลวิชาชีพ" class="w-5 h-5 text-teal-600"> <span>พยาบาลวิชาชีพ</span></label>
+                <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-teal-300 md:col-span-2"><input type="radio" name="position" value="อื่นๆ" class="w-5 h-5 text-teal-600"> <span>อื่น ๆ</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">7. ประสบการณ์การปฏิบัติงาน (ปี) <span class="text-red-500">*</span></label>
+              <input type="number" name="experience" min="0" max="50" step="0.5" placeholder="เช่น 10.5"
+                class="w-full md:w-48 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">8. เคยมีประสบการณ์ดูแลผู้ป่วยแบบประคับประคอง <span class="text-red-500">*</span></label>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="palliative_exp" value="เคย" class="w-5 h-5 text-teal-600"> <span>เคย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="palliative_exp" value="ไม่เคย" class="w-5 h-5 text-teal-600"> <span>ไม่เคย</span></label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 font-medium mb-3">9. เคยได้รับการอบรม <span class="text-red-500">*</span></label>
+              <div class="flex gap-4 mb-3">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="palliative_training" value="เคย" class="w-5 h-5 text-teal-600" onchange="toggleTrainingCourse()"> <span>เคย</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="palliative_training" value="ไม่เคย" class="w-5 h-5 text-teal-600" onchange="toggleTrainingCourse()"> <span>ไม่เคย</span></label>
+              </div>
+              <div id="training-course-wrapper" class="hidden">
+                <label class="block text-gray-600 text-sm mb-2">ชื่อหลักสูตร:</label>
+                <input type="text" name="training_course" placeholder="กรุณากรอกชื่อหลักสูตร" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 flex justify-end">
+            <button onclick="saveProfileAndNext()" class="px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-xl hover:from-teal-600 hover:to-cyan-600 shadow-lg flex items-center gap-2">
+              ถัดไป
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2 -->
+      <section id="section2" class="section-card bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
+            <span class="text-cyan-600 font-bold">2</span>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">ส่วนที่ 2: สมรรถนะการดูแลแบบประคับประคอง</h2>
+        </div>
+
+        <div class="text-gray-600 mb-4 pl-4 border-l-4 border-cyan-200">
+          <p class="mb-1">โปรดประเมินความสามารถของท่านในแต่ละรายการ (ทั้งหมด 65 ข้อ)</p>
+          <div id="p2-progress" class="text-sm font-medium text-teal-600">ตอบแล้ว: 0/65 ข้อ</div>
+        </div>
+
+        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4 mb-6">
+          <h4 class="font-medium text-gray-700 mb-3">ระดับความมั่นใจ (0-5):</h4>
+          <div class="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs text-center">
+            <div class="p-2 bg-white rounded border text-gray-400">0 = ไม่มั่นใจเลย</div>
+            <div class="p-2 bg-white rounded border text-red-400">1 = มั่นใจน้อยมาก</div>
+            <div class="p-2 bg-white rounded border text-orange-400">2 = มั่นใจน้อย</div>
+            <div class="p-2 bg-white rounded border text-yellow-600">3 = ปานกลาง</div>
+            <div class="p-2 bg-white rounded border text-lime-600">4 = มั่นใจมาก</div>
+            <div class="p-2 bg-white rounded border text-green-600">5 = มั่นใจมากที่สุด</div>
+          </div>
+        </div>
+
+        <div id="part2-questions" class="bg-white border border-gray-200 rounded-xl divide-y max-h-[60vh] overflow-y-auto"></div>
+
+        <div class="mt-8 flex justify-between">
+          <button onclick="goBackFrom2()" class="px-6 py-3 border-2 border-gray-300 text-gray-600 font-medium rounded-xl hover:border-teal-500 hover:text-teal-600 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            ย้อนกลับ
+          </button>
+          <button onclick="goToSection(3)" class="px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-xl hover:from-teal-600 hover:to-cyan-600 flex items-center gap-2">
+            ถัดไป
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- SECTION 3 -->
+      <section id="section3" class="section-card bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+            <span class="text-emerald-600 font-bold">3</span>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">ส่วนที่ 3: การดูแลยึดบุคคลเป็นศูนย์กลาง</h2>
+        </div>
+
+        <div class="text-gray-600 mb-4 pl-4 border-l-4 border-emerald-200">
+          <p class="mb-1">โปรดประเมินระดับการบรรลุเป้าหมายในการดูแล (ทั้งหมด 13 ข้อ)</p>
+          <div id="p3-progress" class="text-sm font-medium text-teal-600">ตอบแล้ว: 0/13 ข้อ</div>
+        </div>
+
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 mb-6">
+          <h4 class="font-medium text-gray-700 mb-3">ระดับความเห็นด้วย (1-5):</h4>
+          <div class="grid grid-cols-5 gap-2 text-xs text-center">
+            <div class="p-2 bg-white rounded border text-red-400">1 = ไม่เห็นด้วยอย่างยิ่ง</div>
+            <div class="p-2 bg-white rounded border text-orange-400">2 = ไม่เห็นด้วย</div>
+            <div class="p-2 bg-white rounded border text-yellow-600">3 = ไม่แน่ใจ</div>
+            <div class="p-2 bg-white rounded border text-lime-600">4 = เห็นด้วย</div>
+            <div class="p-2 bg-white rounded border text-green-600">5 = เห็นด้วยมากที่สุด</div>
+          </div>
+        </div>
+
+        <div id="part3-questions" class="bg-white border border-gray-200 rounded-xl divide-y max-h-[55vh] overflow-y-auto"></div>
+
+        <div class="mt-8 flex justify-between">
+          <button onclick="goToSection(2)" class="px-6 py-3 border-2 border-gray-300 text-gray-600 font-medium rounded-xl hover:border-teal-500 hover:text-teal-600 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            ย้อนกลับ
+          </button>
+          <button onclick="submitAssessment()" id="submit-btn" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            ส่งแบบประเมิน
+          </button>
+        </div>
+      </section>
+
+      <!-- SUCCESS -->
+      <section id="success-section" class="section-card bg-white rounded-2xl shadow-lg p-8 text-center hidden">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">ส่งแบบประเมินเรียบร้อยแล้ว!</h2>
+        <p class="text-gray-600 mb-2">ขอบคุณที่สละเวลาทำแบบประเมิน</p>
+        <p id="period-confirmation" class="text-teal-600 font-medium mb-6"></p>
+
+        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-gray-800 mb-4">ผลการประเมิน (คะแนนเฉลี่ย)</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white rounded-lg p-4 border-l-4 border-teal-500">
+              <div class="text-sm text-gray-600">ส่วนที่ 2 (65 ข้อ)</div>
+              <div id="final-part2" class="text-3xl font-bold text-teal-600 mt-2">-</div>
+              <div class="text-xs text-gray-500">คะแนนเต็ม 5</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 border-l-4 border-emerald-500">
+              <div class="text-sm text-gray-600">ส่วนที่ 3 (13 ข้อ)</div>
+              <div id="final-part3" class="text-3xl font-bold text-emerald-600 mt-2">-</div>
+              <div class="text-xs text-gray-500">คะแนนเต็ม 5</div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="backToStatus()" class="px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-xl hover:from-teal-600 hover:to-cyan-600">
+          กลับไปหน้าสถานะ
+        </button>
+      </section>
+
+    </main>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white rounded-2xl p-8 text-center">
+        <div class="animate-spin w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-gray-600">กำลังบันทึกข้อมูล...</p>
+      </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+      <span id="toast-message"></span>
+    </div>
+
+  </div>
+
+<script>
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE";
+const SHEET_NAME = "ชีต1";
+
+const part2Questions = ["1. ประเมินอาการปวดในผู้ป่วยระยะประคับประคองโดยพิจารณาองค์ประกอบต่อไปนี้ทั้งหมด: ลักษณะ ระยะเวลา ตำแหน่ง ความรุนแรง ปัจจัยกระตุ้นและปัจจัยบรรเทา",
+   "2. ประเมินอาการปวดในผู้ป่วยระยะประคับประคองที่ไม่สามารถสื่อสารได้",
+   "3. ใช้วิธีการให้ยาอย่างมีประสิทธิภาพเพื่อบรรเทาอาการปวดในผู้ป่วยระยะประคับประคอง",
+   "4. ใช้วิธีแบบไม่ใช้ยาและการบำบัดเสริมอื่นเพื่อบรรเทาอาการปวดในผู้ป่วยระยะประคับประคอง",
+   "5. ประเมินผลข้างเคียงที่เกี่ยวข้องกับยาแก้ปวดได้ตั้งแต่ระยะเริ่มต้น",
+   "6. ให้การดูแลอย่างมีประสิทธิภาพเพื่อบรรเทาอาการคลื่นไส้และอาเจียนในผู้ป่วยระยะประคับประคอง",
+   "7. ให้การดูแลอย่างมีประสิทธิภาพเพื่อบรรเทาอาการท้องผูกในผู้ป่วยระยะประคับประคอง",
+   "8. ให้การดูแลอย่างมีประสิทธิภาพเพื่อบรรเทาอาการอ่อนเพลียในผู้ป่วยระยะประคับประคอง",
+   "9. ให้การดูแลอย่างมีประสิทธิผลเพื่อบรรเทาอาการหายใจลำบากในผู้ป่วยระยะประคับประคอง",
+   "10. ดูแลช่องปากอย่างเหมาะสมเพื่อส่งเสริมความสุขสบายในผู้ป่วยระยะประคับประคอง",
+   "11. ประเมินภาวะเพ้อสับสนในผู้ป่วยระยะประคับประคองได้ตั้งแต่ระยะเริ่มต้น",
+   "12. ประเมินภาวะซึมเศร้าในผู้ป่วยระยะประคับประคองและครอบครัว",
+   "13. ให้การดูแลอย่างมีประสิทธิภาพเพื่อลดความทุกข์ทางจิตใจในผู้ป่วยระยะประคับประคองและครอบครัว",
+   "14. ช่วยเหลือผู้ป่วยระยะประคับประคองและครอบครัวให้เผชิญกับความเครียดที่เกี่ยวข้องกับการเจ็บป่วย",
+   "15. ให้การสนับสนุนผู้ป่วยระยะประคับประคองและครอบครัวเมื่อเผชิญกับความโศกเศร้า",
+   "16. ประเมินผลกระทบของโรคที่คุกคามชีวิตต่อพลวัตของครอบครัว",
+   "17. ช่วยเหลือผู้ป่วยระยะประคับประคองและครอบครัวในการรักษาประเพณีทางวัฒนธรรมแม้จะมีความเจ็บป่วย",
+   "18. ช่วยเหลือผู้ป่วยระยะประคับประคองและครอบครัวในการระบุทรัพยากรส่วนบุคคลเพื่อรับมือกับปัญหา",
+   "19. ส่งเสริมการสื่อสารระหว่างผู้ป่วยระยะประคับประคองและสมาชิกในครอบครัวเมื่อเกิดความขัดแย้ง",
+   "20. ส่งต่อผู้ป่วยระยะประคับประคองและครอบครัวไปยังแหล่งสนับสนุนที่เหมาะสม",
+   "21. ประเมินความต้องการทางจิตวิญญาณของผู้ป่วยระยะประคับประคองและครอบครัว",
+   "22. รับรู้สัญญาณของความทุกข์ทางจิตวิญญาณในผู้ป่วยระยะประคับประคองและครอบครัว",
+   "23. ช่วยเหลือในการค้นหาความหวังเมื่อแสดงสัญญาณของความสิ้นหวัง",
+   "24. ช่วยเหลือผู้ป่วยในการค้นหาความหมายของประสบการณ์การเจ็บป่วย",
+   "25. ปรับการพยาบาลให้สอดคล้องกับความเชื่อทางจิตวิญญาณ",
+   "26. ประเมินความต้องการที่เกี่ยวข้องกับกิจกรรมในชีวิตประจำวัน",
+   "27. ประเมินความต้องการการสนับสนุนด้านการดูแลเพื่อป้องกันภาวะหมดไฟ",
+   "28. ช่วยเหลือผู้ป่วยในการรักษาความเป็นอิสระให้นานที่สุด",
+   "29. เสริมสร้างพลังของสมาชิกครอบครัวในการให้การดูแล",
+   "30. ดำเนินการเพื่อช่วยบรรเทาภาระของสมาชิกครอบครัว",
+   "31. ระบุประเด็นทางจริยธรรมได้อย่างทันท่วงที",
+   "32. ให้ข้อมูลเกี่ยวกับประเด็นทางกฎหมายที่เกี่ยวข้อง",
+   "33. ช่วยเหลือผู้ป่วยในการตัดสินใจอย่างถ่อมใจในการดูแล",
+   "34. ทำหน้าที่เป็นผู้พิทักษ์สิทธิกับสมาชิกคนอื่นๆ ในทีมสุขภาพ",
+   "35. ทำหน้าที่เป็นผู้พิทักษ์สิทธิเมื่อมีความเห็นแตกต่างกับครอบครัว",
+   "36. มีส่วนร่วมในการอภิปรายสถานการณ์ทางคลินิกในทีมสหวิชาชีพ",
+   "37. ส่งเสริมการสื่อสารระหว่างบุคลากรสุขภาพเพื่อความต่อเนื่องของการดูแล",
+   "38. ส่งเสริมการสื่อสารระหว่างผู้ป่วย ครอบครัว และบุคลากรสุขภาพ",
+   "39. ส่งเสริมการสื่อสารระหว่างบุคลากรเมื่อมีความขัดแย้ง",
+   "40. ส่งเสริมความร่วมมือของสหสาขาวิชาชีพ",
+   "41. รับรู้ว่าความเชื่อของท่านมีอิทธิพลต่อการดูแล",
+   "42. เผชิญกับการสูญเสียและความโศกเศร้า",
+   "43. ระบุปัจจัยกระตุ้นที่ส่งผลกระทบต่อการให้การดูแล",
+   "44. ระบุแหล่งประโยชน์ของท่านเพื่อจัดการความเครียด",
+   "45. สนทนาเรื่องความตายและการจากไป",
+   "46. ให้การดูแลเพื่อบรรเทาอาการปวดในช่วงชั่วโมงสุดท้าย",
+   "47. ให้การดูแลเพื่อบรรเทาอาการหายใจลำบากในช่วงสุดท้าย",
+   "48. ระบุสัญญาณและอาการของระยะใกล้เสียชีวิต",
+   "49. แสดงความจริงใจในการอยู่เคียงข้างในช่วงสุดท้าย",
+   "50. ส่งเสริมการปฏิบัติทางประเพณี วัฒนธรรม และศาสนา",
+   "51. ให้การดูแลแบบองค์รวม ครอบคลุมทั้งด้านร่างกาย จิตใจ สังคม จิตวิญญาณ",
+   "52. ประยุกต์ใช้ปรัชญาและเป้าหมายของการดูแลแบบประคับประคอง",
+   "53. ให้การดูแลอย่างต่อเนื่องตั้งแต่การวินิจฉัยจนถึงภายหลังการเสียชีวิต",
+   "54. ส่งเสริมคุณภาพชีวิตในทุกช่วงของการเจ็บป่วย",
+   "55. อธิบายกลไกของความปวดแก่ผู้ป่วยและครอบครัว",
+   "56. ประเมินอาการรบกวนอื่นๆ เช่น อ่อนแรง เบื่ออาหาร นอนไม่หลับ",
+   "57. ประยุกต์ใช้การรักษาทั้งด้วยยาและไม่ใช้ยา",
+   "58. เข้าใจกระบวนการตายและอธิบายให้เข้าใจได้",
+   "59. เตรียมผู้ป่วยและครอบครัวต่อการเปลี่ยนแปลงในระยะสุดท้าย",
+   "60. ดูแลร่างกายผู้ป่วยภายหลังเสียชีวิตอย่างเคารพศักดิ์ศรี",
+   "61. ประเมินและให้การช่วยเหลือครอบครัวในการเผชิญความสูญเสีย",
+   "62. แยกแยะความเศร้าโศกตามธรรมชาติกับภาวะซึมเศร้า",
+   "63. ส่งต่อครอบครัวไปยังผู้เชี่ยวชาญด้านสุขภาพจิต",
+   "64. ให้การสนับสนุนครอบครัวในระยะหลังการสูญเสีย",
+   "65. ใช้ทักษะการสื่อสารเชิงบำบัดในการดูแลผู้ป่วยและครอบครัว"
+];
+const part3Questions = ["1. เรามักพูดคุยกันถึงวิธีการให้การดูแลที่เน้นผู้ป่วยเป็นศูนย์กลาง",
+   "2. เรามีการประชุมทีมอย่างเป็นทางการเพื่อหารือการดูแลผู้ป่วย",
+   "3. ประวัติชีวิตของผู้ป่วยถูกนำมาใช้ในแผนการดูแล",
+   "4. คุณภาพของปฏิสัมพันธ์มีความสำคัญมากกว่าการทำให้งานเสร็จ",
+   "5. เรามีอิสระในการปรับเปลี่ยนกิจวัตรตามความพึงพอใจของผู้ป่วย",
+   "6. ผู้ป่วยได้รับโอกาสในการมีส่วนร่วมในกิจกรรมประจำวัน",
+   "7. ท่านมีเวลาเพียงพอที่จะให้การดูแลที่เน้นผู้ป่วยเป็นศูนย์กลาง",
+   "8. สภาพแวดล้อมการทำงานรู้สึกสับสนวุ่นวาย",
+   "9. เราต้องทำงานให้เสร็จก่อนจึงจะให้ความสำคัญกับสภาพแวดล้อม",
+   "10. หน่วยงานเป็นอุปสรรคต่อการให้การดูแลที่เน้นผู้ป่วยเป็นศูนย์กลาง",
+   "11. การประเมินความต้องการของผู้ป่วยถูกดำเนินการเป็นประจำ",
+   "12. ผู้ป่วยสามารถเข้าถึงพื้นที่กลางภายนอก",
+   "13. ผู้ป่วยหาทางเดินไปมาได้ยาก"
+];
+
+let state = {
+  license: "",
+  status: { profileDone:false, PRE:false, POST1:false, POST2:false },
+  currentPeriod: null,
+  profileLocked: false,
+  answers2: Array(part2Questions.length).fill(null),
+  answers3: Array(part3Questions.length).fill(null),
+  chart: null,
+};
+
+function showToast(msg, isError=true) {
+  const toast = document.getElementById('toast');
+  const messageEl = document.getElementById('toast-message');
+  toast.classList.remove('bg-red-500','bg-emerald-600');
+  toast.classList.add(isError ? 'bg-red-500' : 'bg-emerald-600');
+  messageEl.textContent = msg;
+  toast.classList.remove('translate-y-20','opacity-0');
+  toast.classList.add('translate-y-0','opacity-100');
+  setTimeout(() => {
+    toast.classList.add('translate-y-20','opacity-0');
+    toast.classList.remove('translate-y-0','opacity-100');
+  }, 2800);
+}
+
+function setLoading(on) { document.getElementById('loading-overlay').classList.toggle('hidden', !on); }
+function setProgress(text, percent) {
+  document.getElementById('progress-text').textContent = text;
+  document.getElementById('progress-bar').style.width = `${percent}%`;
+}
+function onlyDigits10(s) { return /^\d{10}$/.test((s||"").trim()); }
+
+async function postJSON(payload) {
+  if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE") || SCRIPT_URL.includes("PASTE_")) {
+    throw new Error("ยังไม่ได้ตั้งค่า SCRIPT_URL (Apps Script Web App URL)");
+  }
+  const res = await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
+  return data;
+}
+
+function hideAllSections() {
+  ['section1','section2','section3','success-section'].forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+function goToSection(n) {
+  hideAllSections();
+  document.getElementById('status-section').classList.add('hidden');
+  document.getElementById('section'+n).classList.remove('hidden');
+  if (n===1) setProgress('ส่วนที่ 1', 25);
+  if (n===2) setProgress('ส่วนที่ 2', 60);
+  if (n===3) setProgress('ส่วนที่ 3', 85);
+}
+function backToStatus() {
+  hideAllSections();
+  document.getElementById('status-section').classList.remove('hidden');
+  setProgress('สถานะการประเมิน', 0);
+}
+function toggleTrainingCourse() {
+  const v = document.querySelector('input[name="palliative_training"]:checked')?.value;
+  document.getElementById('training-course-wrapper').classList.toggle('hidden', v !== 'เคย');
+}
+
+function updateStatusUI() {
+  document.getElementById('license-badge').textContent = state.license;
+
+  const map = [
+    ['PRE','status-pre','card-pre', null],
+    ['POST1','status-post1','card-post1','msg-post1'],
+    ['POST2','status-post2','card-post2','msg-post2'],
+  ];
+
+  const canPost1 = state.status.PRE;
+  const canPost2 = state.status.POST1;
+
+  for (const [period, badgeId, cardId, msgId] of map) {
+    const done = state.status[period];
+    const badge = document.getElementById(badgeId);
+    const card = document.getElementById(cardId);
+
+    if (done) {
+      badge.textContent = 'ทำแล้ว';
+      badge.className = 'period-badge period-completed';
+      card.classList.add('period-link','disabled');
+      if (msgId) document.getElementById(msgId).classList.add('hidden');
+      continue;
+    }
+
+    let locked = false;
+    if (period==='POST1' && !canPost1) locked = true;
+    if (period==='POST2' && !canPost2) locked = true;
+
+    if (locked) {
+      badge.textContent = 'ยังทำไม่ได้';
+      badge.className = 'period-badge period-locked';
+      card.classList.add('period-link','disabled');
+      if (msgId) document.getElementById(msgId).classList.remove('hidden');
+    } else {
+      badge.textContent = 'ยังไม่ได้ทำ';
+      badge.className = 'period-badge period-pending';
+      card.classList.remove('disabled');
+      if (msgId) document.getElementById(msgId).classList.add('hidden');
+    }
+  }
+
+  const allDone = state.status.PRE && state.status.POST1 && state.status.POST2;
+  document.getElementById('results-section').classList.toggle('hidden', !allDone);
+  if (allDone) loadAndRenderComparison();
+}
+
+async function loadAndRenderComparison() {
+  try {
+    const data = await postJSON({ action:'getResults', license: state.license, sheetName: SHEET_NAME });
+    const rows = data.results;
+    const labels = ['Pre-test','Post-test 1','Post-test 2'];
+    const p2 = [rows.PRE?.part2Avg ?? null, rows.POST1?.part2Avg ?? null, rows.POST2?.part2Avg ?? null];
+    const p3 = [rows.PRE?.part3Avg ?? null, rows.POST1?.part3Avg ?? null, rows.POST2?.part3Avg ?? null];
+
+    const ctx = document.getElementById('comparisonChart');
+    if (state.chart) state.chart.destroy();
+    state.chart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: 'ส่วนที่ 2 (เฉลี่ย)', data: p2 },
+        { label: 'ส่วนที่ 3 (เฉลี่ย)', data: p3 },
+      ]},
+      options: { responsive:true, scales:{ y:{ beginAtZero:true, suggestedMax:5 } } }
+    });
+  } catch (e) {
+    console.error(e);
+    showToast('ดึงผลเปรียบเทียบไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function verifyLicense() {
+  const input = document.getElementById('license-input');
+  const err = document.getElementById('license-error');
+  err.classList.add('hidden');
+  const license = (input.value || '').trim();
+
+  if (!onlyDigits10(license)) {
+    err.textContent = 'กรุณากรอกเลขใบประกอบวิชาชีพให้ครบ 10 หลัก (ตัวเลขเท่านั้น)';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('verify-btn').disabled = true;
+  document.getElementById('license-loading').classList.remove('hidden');
+
+  try {
+    const data = await postJSON({ action:'status', license, sheetName: SHEET_NAME });
+    state.license = license;
+    state.status = data.status;
+    state.profileLocked = data.status.profileDone;
+
+    document.getElementById('license-display').textContent = license;
+    document.getElementById('license-modal').classList.add('hidden');
+
+    updateStatusUI();
+    backToStatus();
+    showToast('ตรวจสอบสถานะเรียบร้อย', false);
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  } finally {
+    document.getElementById('verify-btn').disabled = false;
+    document.getElementById('license-loading').classList.add('hidden');
+  }
+}
+
+function resetAnswers() {
+  state.answers2 = Array(part2Questions.length).fill(null);
+  state.answers3 = Array(part3Questions.length).fill(null);
+}
+
+function startFromStatus(period) {
+  if (state.status[period]) { showToast('ช่วงเวลานี้ทำไปแล้ว', true); return; }
+  if (period==='POST1' && !state.status.PRE) { showToast('ต้องทำ Pre-test ก่อน', true); return; }
+  if (period==='POST2' && !state.status.POST1) { showToast('ต้องทำ Post-test 1 ก่อน', true); return; }
+
+  state.currentPeriod = period;
+  resetAnswers();
+
+  if (period==='PRE' && !state.profileLocked) {
+    document.getElementById('profile-fields').classList.remove('hidden');
+    document.getElementById('profile-note').classList.add('hidden');
+    goToSection(1);
+  } else {
+    document.getElementById('profile-fields').classList.add('hidden');
+    document.getElementById('profile-note').classList.remove('hidden');
+    goToSection(2);
+  }
+  renderPart2();
+  renderPart3();
+}
+
+function collectProfile() {
+  const getRadio = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value || "";
+  const getValue = (name) => document.querySelector(`input[name="${name}"]`)?.value?.trim() || "";
+  return {
+    license: state.license,
+    gender: getRadio('gender'),
+    age: getValue('age'),
+    marital: getRadio('marital'),
+    education: getRadio('education'),
+    hospital: getRadio('hospital'),
+    position: getRadio('position'),
+    experience: getValue('experience'),
+    palliative_exp: getRadio('palliative_exp'),
+    palliative_training: getRadio('palliative_training'),
+    training_course: getValue('training_course'),
+  };
+}
+
+function validateProfile(p) {
+  const required = ['gender','age','marital','education','hospital','position','experience','palliative_exp','palliative_training'];
+  for (const k of required) { if (!p[k]) return `กรุณากรอกข้อมูลให้ครบถ้วน (ขาด: ${k})`; }
+  if (p.palliative_training === 'เคย' && !p.training_course) return 'กรุณาระบุชื่อหลักสูตรที่เคยอบรม';
+  return null;
+}
+
+async function saveProfileAndNext() {
+  if (state.profileLocked) { goToSection(2); return; }
+  const profile = collectProfile();
+  const err = validateProfile(profile);
+  if (err) { showToast(err, true); return; }
+
+  setLoading(true);
+  try {
+    await postJSON({ action:'saveProfile', sheetName:SHEET_NAME, profile });
+    state.profileLocked = true;
+    state.status.profileDone = true;
+    showToast('บันทึกส่วนที่ 1 เรียบร้อย', false);
+    goToSection(2);
+    renderPart2();
+    renderPart3();
+  } catch (e) {
+    showToast(e.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+const P2_STYLE = {
+  0: { ring:'ring-gray-200', bg:'bg-gray-200', text:'text-gray-700', border:'border-gray-300' },
+  1: { ring:'ring-red-200', bg:'bg-red-100', text:'text-red-700', border:'border-red-300' },
+  2: { ring:'ring-orange-200', bg:'bg-orange-100', text:'text-orange-700', border:'border-orange-300' },
+  3: { ring:'ring-yellow-200', bg:'bg-yellow-100', text:'text-yellow-800', border:'border-yellow-300' },
+  4: { ring:'ring-lime-200', bg:'bg-lime-100', text:'text-lime-800', border:'border-lime-300' },
+  5: { ring:'ring-green-200', bg:'bg-green-100', text:'text-green-800', border:'border-green-300' },
+};
+const P3_STYLE = {
+  1: { ring:'ring-red-200', bg:'bg-red-100', text:'text-red-700', border:'border-red-300' },
+  2: { ring:'ring-orange-200', bg:'bg-orange-100', text:'text-orange-700', border:'border-orange-300' },
+  3: { ring:'ring-yellow-200', bg:'bg-yellow-100', text:'text-yellow-800', border:'border-yellow-300' },
+  4: { ring:'ring-lime-200', bg:'bg-lime-100', text:'text-lime-800', border:'border-lime-300' },
+  5: { ring:'ring-green-200', bg:'bg-green-100', text:'text-green-800', border:'border-green-300' },
+};
+
+function mkOptionButton(value, styleMap, onClick) {
+  const s = styleMap[value];
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `likert-option px-3 py-2 rounded-lg border ${s.border} text-sm font-semibold text-gray-600 bg-white hover:shadow-sm`;
+  btn.textContent = String(value);
+  btn.dataset.value = String(value);
+  btn.onclick = onClick;
+  return btn;
+}
+
+function applySelected(container, value, styleMap) {
+  container.querySelectorAll('button.likert-option').forEach(btn => {
+    const v = Number(btn.dataset.value);
+    btn.classList.remove('selected','ring-2',
+      'bg-gray-200','bg-red-100','bg-orange-100','bg-yellow-100','bg-lime-100','bg-green-100',
+      'text-gray-700','text-red-700','text-orange-700','text-yellow-800','text-lime-800','text-green-800',
+      'border-gray-300','border-red-300','border-orange-300','border-yellow-300','border-lime-300','border-green-300',
+      'ring-gray-200','ring-red-200','ring-orange-200','ring-yellow-200','ring-lime-200','ring-green-200'
+    );
+    btn.classList.add('bg-white','text-gray-600');
+  });
+  const chosen = container.querySelector(`button.likert-option[data-value="${value}"]`);
+  if (!chosen) return;
+  const s = styleMap[value];
+  chosen.classList.add('selected','ring-2', s.ring, s.bg, s.text, s.border);
+  chosen.classList.remove('bg-white','text-gray-600');
+}
+
+function renderPart2() {
+  const host = document.getElementById('part2-questions');
+  host.innerHTML = "";
+  part2Questions.forEach((q, idx) => {
+    const row = document.createElement('div');
+    row.className = 'p-4 flex flex-col md:flex-row md:items-center gap-3';
+    const left = document.createElement('div');
+    left.className = 'flex-1 text-gray-800';
+    left.innerHTML = `<div class="font-medium">${q}</div>`;
+    const right = document.createElement('div');
+    right.className = 'flex gap-2 flex-wrap justify-start md:justify-end';
+
+    for (let v=0; v<=5; v++) {
+      const btn = mkOptionButton(v, P2_STYLE, () => {
+        state.answers2[idx] = v;
+        applySelected(right, v, P2_STYLE);
+        updateProgressCounters();
+      });
+      if (v===0) btn.classList.add('text-gray-400');
+      if (v===1) btn.classList.add('text-red-400');
+      if (v===2) btn.classList.add('text-orange-400');
+      if (v===3) btn.classList.add('text-yellow-600');
+      if (v===4) btn.classList.add('text-lime-600');
+      if (v===5) btn.classList.add('text-green-600');
+      right.appendChild(btn);
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    host.appendChild(row);
+  });
+  updateProgressCounters();
+}
+
+function renderPart3() {
+  const host = document.getElementById('part3-questions');
+  host.innerHTML = "";
+  part3Questions.forEach((q, idx) => {
+    const row = document.createElement('div');
+    row.className = 'p-4 flex flex-col md:flex-row md:items-center gap-3';
+    const left = document.createElement('div');
+    left.className = 'flex-1 text-gray-800';
+    left.innerHTML = `<div class="font-medium">${q}</div>`;
+    const right = document.createElement('div');
+    right.className = 'flex gap-2 flex-wrap justify-start md:justify-end';
+
+    for (let v=1; v<=5; v++) {
+      const btn = mkOptionButton(v, P3_STYLE, () => {
+        state.answers3[idx] = v;
+        applySelected(right, v, P3_STYLE);
+        updateProgressCounters();
+      });
+      if (v===1) btn.classList.add('text-red-400');
+      if (v===2) btn.classList.add('text-orange-400');
+      if (v===3) btn.classList.add('text-yellow-600');
+      if (v===4) btn.classList.add('text-lime-600');
+      if (v===5) btn.classList.add('text-green-600');
+      right.appendChild(btn);
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    host.appendChild(row);
+  });
+  updateProgressCounters();
+}
+
+function updateProgressCounters() {
+  const a2 = state.answers2.filter(v => v !== null).length;
+  const a3 = state.answers3.filter(v => v !== null).length;
+  document.getElementById('p2-progress').textContent = `ตอบแล้ว: ${a2}/${part2Questions.length} ข้อ`;
+  document.getElementById('p3-progress').textContent = `ตอบแล้ว: ${a3}/${part3Questions.length} ข้อ`;
+}
+
+function goBackFrom2() {
+  if (state.currentPeriod==='PRE' && !state.status.profileDone) goToSection(1);
+  else backToStatus();
+}
+
+function avg(arr) {
+  const nums = arr.filter(v => typeof v === 'number');
+  if (!nums.length) return null;
+  return nums.reduce((a,b)=>a+b,0) / nums.length;
+}
+function validateAnswers() {
+  if (state.answers2.some(v => v === null)) return 'กรุณาตอบส่วนที่ 2 ให้ครบทุกข้อ';
+  if (state.answers3.some(v => v === null)) return 'กรุณาตอบส่วนที่ 3 ให้ครบทุกข้อ';
+  return null;
+}
+function periodLabel(p) {
+  if (p==='PRE') return 'ก่อนการอบรม (Pre-test)';
+  if (p==='POST1') return 'หลังการอบรม (5 วัน) (Post-test 1)';
+  if (p==='POST2') return 'หลังการอบรม (1 เดือน) (Post-test 2)';
+  return p;
+}
+
+async function submitAssessment() {
+  const err = validateAnswers();
+  if (err) { showToast(err, true); return; }
+
+  const payload = {
+    action: 'saveAssessment',
+    sheetName: SHEET_NAME,
+    license: state.license,
+    period: state.currentPeriod,
+    part2Answers: state.answers2,
+    part3Answers: state.answers3,
+    part2Avg: avg(state.answers2),
+    part3Avg: avg(state.answers3),
+  };
+
+  setLoading(true);
+  try {
+    await postJSON(payload);
+    state.status[state.currentPeriod] = true;
+
+    document.getElementById('period-confirmation').textContent = `บันทึกช่วงเวลา: ${periodLabel(state.currentPeriod)}`;
+    document.getElementById('final-part2').textContent = (payload.part2Avg ?? 0).toFixed(2);
+    document.getElementById('final-part3').textContent = (payload.part3Avg ?? 0).toFixed(2);
+
+    hideAllSections();
+    document.getElementById('status-section').classList.add('hidden');
+    document.getElementById('success-section').classList.remove('hidden');
+    setProgress('เสร็จสิ้น', 100);
+
+    showToast('บันทึกข้อมูลเรียบร้อย', false);
+  } catch(e) {
+    showToast(e.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+renderPart2();
+renderPart3();
+</script>
+</body>
+</html>
